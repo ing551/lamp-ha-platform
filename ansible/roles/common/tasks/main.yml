@@ -1,0 +1,22 @@
+---
+- name: 关闭 SELinux
+  lineinfile:
+    path: /etc/selinux/config
+    regexp: '^SELINUX='
+    line: SELINUX=disabled
+  notify: 立即生效 setenforce 0
+
+- name: 停止 firewalld 并禁止开机自启
+  systemd:
+    name: firewalld
+    state: stopped
+    enabled: false
+
+- name: 安装基础工具
+  dnf:
+    name:
+      - vim
+      - wget
+      - net-tools
+    state: present
+

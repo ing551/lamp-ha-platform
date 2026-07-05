@@ -1,0 +1,30 @@
+---
+- name: 所有机器初始化
+  hosts: all
+  roles:
+    - common
+
+- name: 部署 MySQL
+  hosts: mysql
+  roles:
+    - mysql
+
+- name: 部署 redis
+  hosts: redis
+  roles:
+    - redis
+
+- name: 部署 nfs  
+  hosts: nfs
+  roles:
+    - nfs
+
+- name: 部署 Web 节点
+  hosts: web
+  roles:
+    - web
+
+- name: 部署 LB 节点
+  hosts: nginx-lb
+  roles:
+    - nginx-lb

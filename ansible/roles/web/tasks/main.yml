@@ -1,0 +1,116 @@
+---
+- name: 安装 EPEL 源
+  dnf:
+    name: epel-release
+    state: present
+
+- name: 安装 Nginx + PHP + 扩展
+  dnf:
+    name:
+      - nginx
+      - php
+      - php-fpm
+      - php-mysqlnd
+      - php-xml
+      - php-gd
+      - php-json
+      - php-redis
+    state: present
+
+# FastCGI转发的意思就是nginx都不懂php的代码，然后给php-fpm解析然后给到nginx
+- name: 配置 Nginx (FastCGI转发)
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: 重载 Nginx
+
+- name: 创建 WordPress 根目录
+  file:
+    path: /usr/share/nginx/html/wordpress
+    state: directory
+    owner: apache
+    group: apache
+
+- name: 解压 WordPress
+  unarchive:
+    src: latest-zh_CN.tar.gz
+    dest: /usr/share/nginx/html/wordpress
+    remote_src: false
+    owner: apache
+    group: apache
+    extra_opts: ['--strip-components=1']
+
+- name: 生成 wp-config.php
+  template:
+    src: wp-config.php.j2
+    dest: /usr/share/nginx/html/wordpress/wp-config.php
+    owner: apache
+    group: apache
+    mode: '0644'
+
+- name: 创建 NFS 挂载目录
+  file:
+    path: /mnt/nfs-wordpress
+    state: directory
+
+- name: 挂载 NFS
+  mount:
+    path: /mnt/nfs-wordpress
+    src: "{{ nfs_ip }}:/data/wordpress"
+    fstype: nfs
+    state: mounted
+
+- name: 创建 uploads 软链接
+  file:
+    src: /mnt/nfs-wordpress/uploads
+    dest: /usr/share/nginx/html/wordpress/wp-content/uploads
+    state: link
+    owner: apache
+    group: apache
+    force: true
+
+- name: 启动 Nginx
+  systemd:
+    name: nginx
+    state: started
+    enabled: true
+
+- name: 启动 PHP-FPM
+  systemd:
+    name: php-fpm
+    state: started
+    enabled: true
+
+- name: 安装 Keepalived
+  dnf:
+    name: keepalived
+    state: present
+
+- name: 创建 keepalived_script 用户
+  user:
+    name: keepalived_script
+    system: true
+    shell: /sbin/nologin
+    state: present
+
+- name: 创建健康检查脚本
+  copy:
+    content: |
+      #!/bin/bash
+      /usr/sbin/pidof nginx && /usr/sbin/pidof php-fpm
+    dest: /usr/local/bin/check_web.sh
+    owner: root
+    group: root
+    mode: '0755'
+      
+- name: 配置 Keepalived
+  template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: 重启 Keepalived

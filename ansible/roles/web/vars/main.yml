@@ -1,0 +1,3 @@
+---
+keepalived_state: "{{ 'MASTER' if hostname == 'web1' else 'BACKUP' }}"
+keepalived_priority: "{{ 100 if hostname == 'web1' else 90 }}"

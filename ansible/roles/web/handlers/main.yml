@@ -1,0 +1,10 @@
+---
+- name: 重载 Nginx
+  systemd:
+    name: nginx
+    state: reloaded
+
+- name: 重启 Keepalived
+  systemd:
+    name: keepalived
+    state: restarted

@@ -1,0 +1,45 @@
+---
+- name: 安装 PyMySQL（Ansible 操作 MySQL 需要）
+  dnf:
+    name: python3-PyMySQL
+    state: present
+
+
+- name: 安装 MariaDB
+  dnf:
+    name:
+      - mariadb-server
+      - mariadb
+    state: present
+
+- name: 启动 MariaDB
+  systemd:
+    name: mariadb
+    state: started
+    enabled: true
+
+- name: 创建 WordPress 数据库
+  mysql_db:
+    name: "{{ db_name }}"
+    state: present
+    login_unix_socket: /var/lib/mysql/mysql.sock
+  ignore_errors: true
+
+- name: 创建 wpuser 用户（允许web节点远程连接）
+  mysql_user:
+    name: "{{ db_user }}"
+    host: "{{ item }}"
+    password: "{{ db_password }}"
+    priv: "{{ db_name }}.*:ALL,GRANT"
+    state: present
+    login_unix_socket: /var/lib/mysql/mysql.sock
+  loop:
+    - "{{ web1_ip }}"
+    - "{{ web2_ip }}"
+
+- name: MySQL 允许远程连接
+  lineinfile:
+    path: /etc/my.cnf.d/mariadb-server.cnf
+    regexp: '^#?bind-address'
+    line: bind-address=0.0.0.0
+  notify: 重启 MariaDB

@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # ============ MySQL ============
+  mysql:
+    image: mariadb:10.5
+    container_name: mysql
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: root123
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wpuser
+      MARIADB_PASSWORD: 123456
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+  # ============ Redis ============
+  redis:
+    image: redis:6
+    container_name: redis
+    restart: always
+    volumes:
+      - ./redis-data:/data
+    ports:
+      - "6379:6379"
+
+  # ============ Web 节点 1 ============
+  web1:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    container_name: web1
+    restart: always
+    volumes:
+      - ./wordpress/wordpress:/usr/share/nginx/html/wordpress
+    depends_on:
+      - mysql
+      - redis
+
+  # ============ Web 节点 2 ============
+  web2:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    container_name: web2
+    restart: always
+    volumes:
+      - ./wordpress/wordpress:/usr/share/nginx/html/wordpress
+    depends_on:
+      - mysql
+      - redis
+
+  # ============ Nginx 负载均衡 ============
+  lb:
+    image: nginx:1.20
+    container_name: lb
+    restart: always
+    volumes:
+      - ./lb/lb-nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - "80:80"
+    depends_on:
+      - web1
+      - web2

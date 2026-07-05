@@ -1,0 +1,18 @@
+---
+- name: 安装 redis
+  dnf:
+    name: redis
+    state: present
+
+- name: 启动 redis
+  systemd:
+    name: redis
+    state: started
+    enabled: true
+
+- name: 允许远程连接
+  lineinfile:
+    path: /etc/redis/redis.conf
+    regexp: '^bind 127.0.0.1'
+    line: bind 0.0.0.0
+  notify: 重启 redis

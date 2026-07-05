@@ -1,0 +1,66 @@
+--- 
+- name: 安装 EPEL 源
+  dnf:
+    name: epel-release
+    state: present
+
+- name: 安装 Nginx
+  dnf:
+    name: nginx
+    state: present
+
+- name: 配置 Nginx 负载均衡
+  template:
+    src: nginx-lb.conf.j2
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: 重载 Nginx
+
+- name: 放行 SELinux 反向代理连接
+  command: setsebool -P httpd_can_network_connect 1
+  ignore_errors: true
+
+- name: 启动 Nginx
+  systemd:
+    name: nginx
+    state: started
+    enabled: true
+
+- name: 安装 Keepalived
+  dnf:
+    name: keepalived
+    state: present
+
+- name: 创建 keepalived_script 用户
+  user:
+    name: keepalived_script
+    system: true
+    shell: /sbin/nologin
+    state: present
+
+- name: 创建健康检查脚本
+  copy:
+    content: |
+      #!/bin/bash
+      /usr/sbin/pidof nginx
+    dest: /usr/local/bin/check_lb.sh
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: 配置 Keepalived
+  template:
+    src: keepalived-lb.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: 重启 Keepalived
+
+- name: 启动 Keepalived
+  systemd:
+    name: keepalived
+    state: started
+    enabled: true

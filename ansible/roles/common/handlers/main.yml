@@ -1,0 +1,5 @@
+---
+- name: 立即生效 setenforce 0
+  command: setenforce 0
+  ignore_errors: true
+

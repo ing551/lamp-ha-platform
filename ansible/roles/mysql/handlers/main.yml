@@ -1,0 +1,5 @@
+---
+- name: 重启 MariaDB
+  systemd:
+    name: mariadb
+    state: restarted

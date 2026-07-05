@@ -1,0 +1,29 @@
+---
+- name: 安装 NFS 工具
+  dnf:
+    name: nfs-utils
+    state: present
+
+- name: 创建共享目录
+  file:
+    path: /data/wordpress
+    state: directory
+
+- name: 配置 exports
+  lineinfile:
+    path: /etc/exports
+    regexp: '^/data/wordpress'
+    line: /data/wordpress 192.168.200.0/24(rw,sync,no_root_squash)
+  notify: 重载 exports
+
+- name: 启动 rpcbind
+  systemd:
+    name: rpcbind
+    state: started
+    enabled: true
+
+- name: 启动 nfs-server
+  systemd:
+    name: nfs-server
+    state: started
+    enabled: true

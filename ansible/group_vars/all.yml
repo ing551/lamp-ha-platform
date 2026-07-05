@@ -1,0 +1,19 @@
+#公共变量的文本
+#网卡
+net_if: ens160
+
+#个服务的ip
+mysql_ip: 192.168.200.124
+redis_ip: 192.168.200.127
+nfs_ip: 192.168.200.125
+web1_ip: 192.168.200.123
+web2_ip: 192.168.200.126
+lb1_ip: 192.168.200.128
+lb2_ip: 192.168.200.129
+
+
+#数据库
+db_name: wordpress
+db_user: wpuser
+db_password: "123456"
+
